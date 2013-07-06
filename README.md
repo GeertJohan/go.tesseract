@@ -8,14 +8,10 @@ You are required to install tesseract 3.02.02 or later. At time of writing this 
 
 **Before you continue, make sure you have installed [go.leptonica](//github.com/GeertJohan/go.leptonica). Please follow the directions in it's readme.**
 
-Download and extract tesseract sources
+Download, configure, make and install
 ```
 svn checkout http://tesseract-ocr.googlecode.com/svn/tags/release-3.02.02 tesseract-ocr-read-only
 cd tesseract-ocr-read-only
-```
-
-Configure, make and install
-```
 ./autogen.sh
 ./configure
 make
