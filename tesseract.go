@@ -7,6 +7,7 @@ package tesseract
 import "C"
 import (
 	"errors"
+	"github.com/GeertJohan/go.leptonica"
 	"unsafe"
 )
 
@@ -42,7 +43,7 @@ func NewTess(datapath string, language string) (*Tess, error) {
 
 	res := C.TessBaseAPIInit3(tba, cDatapath, cLanguage)
 	if res != 0 {
-		return nil, errors.New("Could not initiate new Tess instance.")
+		return nil, errors.New("could not initiate new Tess instance")
 	}
 
 	tess := &Tess{
@@ -58,6 +59,13 @@ func (t *Tess) SetInputName(filename string) {
 	cFilename := C.CString(filename)
 	defer C.free(unsafe.Pointer(cFilename))
 	C.TessBaseAPISetInputName(t.tba, cFilename)
+}
+
+// void TessBaseAPISetImage2(TessBaseAPI* handle, const PIX* pix);
+
+// SetImagePix sets the input image using a leptonica Pix
+func (t *Tess) SetImagePix(pix *leptonica.Pix) {
+	C.TessBaseAPISetImage2(t.tba, (*[0]byte)(unsafe.Pointer(pix.CPIX)))
 }
 
 // char* TessBaseAPIGetUTF8Text(TessBaseAPI* handle);
@@ -134,7 +142,6 @@ func (t *Tess) DumpVariables() {
 // void TessBaseAPIClearAdaptiveClassifier(TessBaseAPI* handle);
 
 // void TessBaseAPISetImage(TessBaseAPI* handle, const unsigned char* imagedata, int width, int height, int bytes_per_pixel, int bytes_per_line);
-// void TessBaseAPISetImage2(TessBaseAPI* handle, const PIX* pix);
 
 // void TessBaseAPISetSourceResolution(TessBaseAPI* handle, int ppi);
 
