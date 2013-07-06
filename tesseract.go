@@ -1,6 +1,6 @@
 package tesseract
 
-// #include "/usr/local/include/tesseract/capi.h"
+// #include "tesseract/capi.h"
 // #include <stdlib.h>
 // #cgo LDFLAGS: -ltesseract
 import "C"
