@@ -6,7 +6,9 @@ package tesseract
 import "C"
 import (
 	"errors"
+	"fmt"
 	"github.com/GeertJohan/go.leptonica"
+	"github.com/davecgh/go-spew/spew"
 	"unsafe"
 )
 
@@ -51,10 +53,14 @@ func NewTess(datapath string, language string) (*Tess, error) {
 	return tess, nil
 }
 
-// void TessBaseAPISetInputName( TessBaseAPI* handle, const char* name);
+/* void TessBaseAPISetInputName( TessBaseAPI* handle, const char* name);
 
-// SetInputName sets the Tess to read from given input filename
-// TODO: looks like this doesn't actually open a file at all...
+Set the name of the input file. Needed only for training and
+loading a UNLV zone file.
+*/
+
+// SetInputName sets the name of the input file. Needed only for training and loading a UNLV zone file.
+// ++ TODO: drop this?
 func (t *Tess) SetInputName(filename string) {
 	cFilename := C.CString(filename)
 	defer C.free(unsafe.Pointer(cFilename))
@@ -68,17 +74,118 @@ func (t *Tess) SetImagePix(pix *leptonica.Pix) {
 	C.TessBaseAPISetImage2(t.tba, (*[0]byte)(unsafe.Pointer(pix.CPIX)))
 }
 
-// char* TessBaseAPIGetUTF8Text(TessBaseAPI* handle);
+/* char* TessBaseAPIGetUTF8Text(TessBaseAPI* handle);
+
+Make a text string from the internal data structures.
+*/
 
 // GetText returns text after analysing the image(s)
-func (t *Tess) GetText() string {
+func (t *Tess) Text() string {
 	cText := C.TessBaseAPIGetUTF8Text(t.tba)
 	defer C.free(unsafe.Pointer(cText))
 	text := C.GoString(cText)
 	return text
 }
 
-// void TessBaseAPIPrintVariables( const TessBaseAPI* handle, FILE* fp);
+/* char* TessBaseAPIGetHOCRText(TessBaseAPI* handle, int page_number);
+
+Make a HTML-formatted string with hOCR markup from the internal
+data structures.
+page_number is 0-based but will appear in the output as 1-based.
+Image name/input_file_ can be set by SetInputName before calling
+GetHOCRText
+STL removed from original patch submission and refactored by rays.
+*/
+
+//GetHOCRText returns the HOCR text for given pagenumber
+func (t *Tess) HOCRText(pagenumber int) string {
+	cText := C.TessBaseAPIGetHOCRText(t.tba, C.int(pagenumber))
+	defer C.free(unsafe.Pointer(cText))
+	text := C.GoString(cText)
+	return text
+}
+
+/* char* TessBaseAPIGetBoxText(TessBaseAPI* handle, int page_number);
+
+The recognized text is returned as a char* which is coded
+as a UTF8 box file and must be freed with the delete [] operator.
+page_number is a 0-base page index that will appear in the box file.
+*/
+
+//GetBoxText returns the box text for given pagenumber
+func (t *Tess) BoxText(pagenumber int) string {
+	cText := C.TessBaseAPIGetBoxText(t.tba, C.int(pagenumber))
+	defer C.free(unsafe.Pointer(cText))
+	text := C.GoString(cText)
+	return text
+}
+
+/* char* TessBaseAPIGetUNLVText(TessBaseAPI* handle);
+
+The recognized text is returned as a char* which is coded
+as UNLV format Latin-1 with specific reject and suspect codes
+and must be freed with the delete [] operator.
+*/
+
+//GetUNLVText returns the UNLV text
+func (t *Tess) UNLVText() string {
+	cText := C.TessBaseAPIGetUNLVText(t.tba)
+	defer C.free(unsafe.Pointer(cText))
+	text := C.GoString(cText)
+	return text
+}
+
+/* const char* TessBaseAPIGetInitLanguagesAsString(const TessBaseAPI* handle);
+
+Returns the languages string used in the last valid initialization.
+If the last initialization specified "deu+hin" then that will be
+returned. If hin loaded eng automatically as well, then that will
+not be included in this list. To find the languages actually
+loaded use GetLoadedLanguagesAsVector.
+The returned string should NOT be deleted.
+*/
+
+// ++
+func asdf() {}
+
+/* char** TessBaseAPIGetLoadedLanguagesAsVector(const TessBaseAPI* handle);
+
+Returns the loaded languages in the vector of STRINGs.
+Includes all languages loaded by the last Init, including those loaded
+as dependencies of other loaded languages.
+*/
+
+// fdasf
+func asdffas() {}
+
+/* char** TessBaseAPIGetAvailableLanguagesAsVector(const TessBaseAPI* handle);
+
+Returns the available languages in the vector of STRINGs.
+*/
+
+// AvailableLanguages returns the languages available for the given tesseract instance
+// TODO: fix this. doesn't work correctly yet.
+func (t *Tess) AvailableLanguages() []string {
+	cLangs := C.TessBaseAPIGetAvailableLanguagesAsVector(t.tba)
+	defer C.TessDeleteTextArray(cLangs)
+
+	langs := make([]string, 0)
+	for {
+		if *cLangs == nil {
+			fmt.Println("*cLangs is nil")
+			return langs
+		}
+		langs = append(langs, C.GoString(*cLangs))
+		cLangsPtr := uintptr(unsafe.Pointer(cLangs))
+		cLangsPtr += 1
+		cLangs = (**C.char)(unsafe.Pointer(cLangsPtr))
+	}
+}
+
+/* void TessBaseAPIPrintVariables( const TessBaseAPI* handle, FILE* fp);
+
+Print Tesseract parameters to the given file.
+*/
 
 // DumpVariables dumps the variables set on a Tess to stdout
 func (t *Tess) DumpVariables() {
@@ -124,10 +231,6 @@ func (t *Tess) DumpVariables() {
 // int TessBaseAPIInit1(TessBaseAPI* handle, const char* datapath, const char* language, TessOcrEngineMode oem, char** configs, int configs_size);
 // int TessBaseAPIInit2(TessBaseAPI* handle, const char* datapath, const char* language, TessOcrEngineMode oem);
 
-// const char* TessBaseAPIGetInitLanguagesAsString(const TessBaseAPI* handle);
-// char** TessBaseAPIGetLoadedLanguagesAsVector(const TessBaseAPI* handle);
-// char** TessBaseAPIGetAvailableLanguagesAsVector(const TessBaseAPI* handle);
-
 // int TessBaseAPIInitLangMod(TessBaseAPI* handle, const char* datapath, const char* language);
 // void TessBaseAPIInitForAnalysePage(TessBaseAPI* handle);
 
@@ -169,9 +272,6 @@ func (t *Tess) DumpVariables() {
 // TessResultIterator* TessBaseAPIGetIterator(TessBaseAPI* handle);
 // TessMutableIterator* TessBaseAPIGetMutableIterator(TessBaseAPI* handle);
 
-// char* TessBaseAPIGetHOCRText(TessBaseAPI* handle, int page_number);
-// char* TessBaseAPIGetBoxText(TessBaseAPI* handle, int page_number);
-// char* TessBaseAPIGetUNLVText(TessBaseAPI* handle);
 // int TessBaseAPIMeanTextConf(TessBaseAPI* handle);
 // int* TessBaseAPIAllWordConfidences(TessBaseAPI* handle);
 // BOOL TessBaseAPIAdaptToWordStr(TessBaseAPI* handle, TessPageSegMode mode, const char* wordstr);

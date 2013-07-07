@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/GeertJohan/go.leptonica"
 	"github.com/GeertJohan/go.tesseract"
+	"github.com/davecgh/go-spew/spew"
 	"log"
 )
 
@@ -27,8 +28,19 @@ func main() {
 	t.SetImagePix(pix)
 
 	// retrieve text from the tesseract instance
-	fmt.Println(t.GetText())
+	fmt.Println(t.Text())
+
+	// retrieve text from the tesseract instance
+	fmt.Println(t.HOCRText(0))
+
+	// retrieve text from the tesseract instance
+	fmt.Println(t.BoxText(0))
+
+	// retrieve text from the tesseract instance
+	fmt.Println(t.UNLVText())
 
 	// dump variables for info
-	t.DumpVariables()
+	// t.DumpVariables()
+
+	spew.Dump(t.AvailableLanguages())
 }
