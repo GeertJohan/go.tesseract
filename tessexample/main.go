@@ -8,20 +8,27 @@ import (
 )
 
 func main() {
+	// print the version
 	fmt.Println(tesseract.Version())
 
-	t, err := tesseract.NewTess("/usr/local/share/tessdata", "nld")
+	// create new tess instance and point it to the tessdata location. Set language to english.
+	t, err := tesseract.NewTess("/usr/local/share/tessdata", "eng")
 	if err != nil {
 		log.Fatalf("Error while initializing Tess: %s\n", err)
 	}
+
+	// open a new Pix from file with leptonica
 	pix, err := leptonica.NewPixFromFile("/home/geertjohan/input.jpg")
 	if err != nil {
 		log.Fatalf("Error while getting pix from file: %s\n", err)
 	}
-	t.SetImagePix(pix)
-	// t.SetInputName("/home/geertjohan/input.jpg")
 
+	// set the image to the tesseract instance
+	t.SetImagePix(pix)
+
+	// retrieve text from the tesseract instance
 	fmt.Println(t.GetText())
 
+	// dump variables for info
 	t.DumpVariables()
 }

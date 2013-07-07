@@ -3,7 +3,6 @@ package tesseract
 // #cgo LDFLAGS: -ltesseract
 // #include "tesseract/capi.h"
 // #include <stdlib.h>
-// #include <stdio.h>
 import "C"
 import (
 	"errors"
@@ -55,6 +54,7 @@ func NewTess(datapath string, language string) (*Tess, error) {
 // void TessBaseAPISetInputName( TessBaseAPI* handle, const char* name);
 
 // SetInputName sets the Tess to read from given input filename
+// TODO: looks like this doesn't actually open a file at all...
 func (t *Tess) SetInputName(filename string) {
 	cFilename := C.CString(filename)
 	defer C.free(unsafe.Pointer(cFilename))
