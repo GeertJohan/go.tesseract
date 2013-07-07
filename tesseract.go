@@ -6,8 +6,8 @@ package tesseract
 import "C"
 import (
 	"errors"
-	"fmt"
 	"github.com/GeertJohan/go.leptonica"
+	"runtime"
 	"unsafe"
 )
 
@@ -33,24 +33,49 @@ func Version() string {
 
 // NewTess creates and returns a new tesseract instance.
 func NewTess(datapath string, language string) (*Tess, error) {
+	// create new empty TessBaseAPI
 	tba := C.TessBaseAPICreate()
 
+	// prepare string for C call
 	cDatapath := C.CString(datapath)
 	defer C.free(unsafe.Pointer(cDatapath))
 
+	// prepare string for C call
 	cLanguage := C.CString(language)
 	defer C.free(unsafe.Pointer(cLanguage))
 
+	// initialize datapath and language on TessBaseAPI
 	res := C.TessBaseAPIInit3(tba, cDatapath, cLanguage)
 	if res != 0 {
 		return nil, errors.New("could not initiate new Tess instance")
 	}
 
+	// create tesseract instance (Tess)
 	tess := &Tess{
 		tba: tba,
 	}
+
+	// set GC finalizer, to be ran in case the user forgets to call Close()
+	runtime.SetFinalizer(tess, (*Tess).delete)
+
+	// all done
 	return tess, nil
 }
+
+// void TessBaseAPIDelete(TessBaseAPI* handle);
+func (t *Tess) delete() {
+	if t.tba != nil {
+		C.TessBaseAPIDelete(t.tba)
+	}
+}
+
+// Close clears the tesseract instance from memory
+func (t *Tess) Close() {
+	t.delete()
+	t.tba = nil
+}
+
+// map t.delete() on t GC as hook/callback in NewXXX() call's
 
 /* void TessBaseAPISetInputName( TessBaseAPI* handle, const char* name);
 
@@ -78,7 +103,7 @@ func (t *Tess) SetImagePix(pix *leptonica.Pix) {
 Make a text string from the internal data structures.
 */
 
-// GetText returns text after analysing the image(s)
+// Text returns text after analysing the image(s)
 func (t *Tess) Text() string {
 	cText := C.TessBaseAPIGetUTF8Text(t.tba)
 	defer C.free(unsafe.Pointer(cText))
@@ -96,7 +121,7 @@ GetHOCRText
 STL removed from original patch submission and refactored by rays.
 */
 
-//GetHOCRText returns the HOCR text for given pagenumber
+// HOCRText returns the HOCR text for given pagenumber
 func (t *Tess) HOCRText(pagenumber int) string {
 	cText := C.TessBaseAPIGetHOCRText(t.tba, C.int(pagenumber))
 	defer C.free(unsafe.Pointer(cText))
@@ -111,7 +136,7 @@ as a UTF8 box file and must be freed with the delete [] operator.
 page_number is a 0-base page index that will appear in the box file.
 */
 
-//GetBoxText returns the box text for given pagenumber
+// BoxText returns the box text for given pagenumber
 func (t *Tess) BoxText(pagenumber int) string {
 	cText := C.TessBaseAPIGetBoxText(t.tba, C.int(pagenumber))
 	defer C.free(unsafe.Pointer(cText))
@@ -126,7 +151,7 @@ as UNLV format Latin-1 with specific reject and suspect codes
 and must be freed with the delete [] operator.
 */
 
-//GetUNLVText returns the UNLV text
+// UNLVText returns the UNLV text
 func (t *Tess) UNLVText() string {
 	cText := C.TessBaseAPIGetUNLVText(t.tba)
 	defer C.free(unsafe.Pointer(cText))
@@ -163,20 +188,29 @@ Returns the available languages in the vector of STRINGs.
 */
 
 // AvailableLanguages returns the languages available for the given tesseract instance
-// TODO: fix this. doesn't work correctly yet.
 func (t *Tess) AvailableLanguages() []string {
 	cLangs := C.TessBaseAPIGetAvailableLanguagesAsVector(t.tba)
 	defer C.TessDeleteTextArray(cLangs)
 
+	// get pointer size to do iteration
+	cPtrSize := unsafe.Sizeof(cLangs)
+
+	// create langs string slice to contain result
 	langs := make([]string, 0)
+
+	// iterate over **char
 	for {
+		// check for null terminator
 		if *cLangs == nil {
-			fmt.Println("*cLangs is nil")
 			return langs
 		}
+
+		// add language to result slice
 		langs = append(langs, C.GoString(*cLangs))
+
+		// increment pointer to next index
 		cLangsPtr := uintptr(unsafe.Pointer(cLangs))
-		cLangsPtr += 1
+		cLangsPtr += cPtrSize
 		cLangs = (**C.char)(unsafe.Pointer(cLangsPtr))
 	}
 }
@@ -190,11 +224,6 @@ Print Tesseract parameters to the given file.
 func (t *Tess) DumpVariables() {
 	C.TessBaseAPIPrintVariables(t.tba, (*C.FILE)(C.stdout))
 }
-
-//++ TODO
-// func (t *Tess) delete() {}
-// func (t *Tess) Close() { t.delete() }
-// map t.delete() on t GC as hook/callback in NewXXX() call's
 
 // typedef struct TessPageIterator TessPageIterator;
 // typedef struct TessResultIterator TessResultIterator;
@@ -216,8 +245,6 @@ func (t *Tess) DumpVariables() {
 // void TessDeleteIntArray(int* arr);
 
 ///* Base API */
-
-// void TessBaseAPIDelete(TessBaseAPI* handle);
 
 // void TessBaseAPISetOutputName(TessBaseAPI* handle, const char* name);
 

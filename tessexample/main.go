@@ -17,9 +17,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error while initializing Tess: %s\n", err)
 	}
+	defer t.Close()
 
 	// open a new Pix from file with leptonica
-	pix, err := leptonica.NewPixFromFile("/home/geertjohan/input.jpg")
+	pix, err := leptonica.NewPixFromFile("./differentFonts.png")
 	if err != nil {
 		log.Fatalf("Error while getting pix from file: %s\n", err)
 	}
@@ -30,14 +31,14 @@ func main() {
 	// retrieve text from the tesseract instance
 	fmt.Println(t.Text())
 
-	// retrieve text from the tesseract instance
-	fmt.Println(t.HOCRText(0))
+	// // retrieve text from the tesseract instance
+	// fmt.Println(t.HOCRText(0))
 
-	// retrieve text from the tesseract instance
-	fmt.Println(t.BoxText(0))
+	// // retrieve text from the tesseract instance
+	// fmt.Println(t.BoxText(0))
 
-	// retrieve text from the tesseract instance
-	fmt.Println(t.UNLVText())
+	// // retrieve text from the tesseract instance
+	// fmt.Println(t.UNLVText())
 
 	// dump variables for info
 	// t.DumpVariables()
