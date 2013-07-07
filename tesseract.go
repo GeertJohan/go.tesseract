@@ -4,6 +4,7 @@ package tesseract
 // #include "tesseract/capi.h"
 // #include <stdlib.h>
 import "C"
+
 import (
 	"errors"
 	"github.com/GeertJohan/go.leptonica"
@@ -63,8 +64,10 @@ func NewTess(datapath string, language string) (*Tess, error) {
 }
 
 // void TessBaseAPIDelete(TessBaseAPI* handle);
+// void TessBaseAPIEnd(TessBaseAPI* handle);
 func (t *Tess) delete() {
 	if t.tba != nil {
+		C.TessBaseAPIEnd(t.tba)
 		C.TessBaseAPIDelete(t.tba)
 	}
 }
@@ -73,6 +76,20 @@ func (t *Tess) delete() {
 func (t *Tess) Close() {
 	t.delete()
 	t.tba = nil
+}
+
+/* void TessBaseAPIClear(TessBaseAPI* handle);
+
+Free up recognition results and any stored image data, without actually
+freeing any recognition data that would be time-consuming to reload.
+Afterwards, you must call SetImage or TesseractRect before doing
+any Recognize or Get* operation.
+*/
+
+// Clear frees up recognition results and any stored image data, without actually freeing any recognition data that would be time-consuming to reload.
+// Afterwards, you must call SetImagePix before doing any Recognize or Get* operation.
+func (t *Tess) Clear() {
+	C.TessBaseAPIClear(t.tba)
 }
 
 // map t.delete() on t GC as hook/callback in NewXXX() call's
@@ -169,8 +186,15 @@ loaded use GetLoadedLanguagesAsVector.
 The returned string should NOT be deleted.
 */
 
-// ++
-func asdf() {}
+// InitializedLanguages returns the languages string used in the last valid initialization.
+// If the last initialization specified "deu+hin" then that will be returned.
+// If hin loaded eng automatically as well, then that will not be included in this list.
+// To find the languages actually loaded use (*Tess).LoadedLanguages().
+func (t *Tess) InitializedLanguages() string {
+	cLang := C.TessBaseAPIGetInitLanguagesAsString(t.tba)
+	defer C.free(unsafe.Pointer(cLang))
+	return C.GoString(cLang)
+}
 
 /* char** TessBaseAPIGetLoadedLanguagesAsVector(const TessBaseAPI* handle);
 
@@ -179,40 +203,29 @@ Includes all languages loaded by the last Init, including those loaded
 as dependencies of other loaded languages.
 */
 
-// fdasf
-func asdffas() {}
+// LoadedLanguages returns the loaded languages in the vector of STRINGs.
+// Includes all languages loaded for the given tesseract instance, including those loaded as dependencies of other loaded languages.
+func (t *Tess) LoadedLanguages() []string {
+	cLangs := C.TessBaseAPIGetLoadedLanguagesAsVector(t.tba)
+	defer C.TessDeleteTextArray(cLangs)
+
+	langs := cStringVectorToStringslice(cLangs)
+	return langs
+}
 
 /* char** TessBaseAPIGetAvailableLanguagesAsVector(const TessBaseAPI* handle);
 
 Returns the available languages in the vector of STRINGs.
 */
 
-// AvailableLanguages returns the languages available for the given tesseract instance
+// AvailableLanguages returns the languages available to the given tesseract instance.
+// To find the languages actually loaded use (*Tess).LoadedLanguages().
 func (t *Tess) AvailableLanguages() []string {
 	cLangs := C.TessBaseAPIGetAvailableLanguagesAsVector(t.tba)
 	defer C.TessDeleteTextArray(cLangs)
 
-	// get pointer size to do iteration
-	cPtrSize := unsafe.Sizeof(cLangs)
-
-	// create langs string slice to contain result
-	langs := make([]string, 0)
-
-	// iterate over **char
-	for {
-		// check for null terminator
-		if *cLangs == nil {
-			return langs
-		}
-
-		// add language to result slice
-		langs = append(langs, C.GoString(*cLangs))
-
-		// increment pointer to next index
-		cLangsPtr := uintptr(unsafe.Pointer(cLangs))
-		cLangsPtr += cPtrSize
-		cLangs = (**C.char)(unsafe.Pointer(cLangsPtr))
-	}
+	langs := cStringVectorToStringslice(cLangs)
+	return langs
 }
 
 /* void TessBaseAPIPrintVariables( const TessBaseAPI* handle, FILE* fp);
@@ -306,9 +319,6 @@ func (t *Tess) DumpVariables() {
 // int TessBaseAPIMeanTextConf(TessBaseAPI* handle);
 // int* TessBaseAPIAllWordConfidences(TessBaseAPI* handle);
 // BOOL TessBaseAPIAdaptToWordStr(TessBaseAPI* handle, TessPageSegMode mode, const char* wordstr);
-
-// void TessBaseAPIClear(TessBaseAPI* handle);
-// void TessBaseAPIEnd(TessBaseAPI* handle);
 
 // int TessBaseAPIIsValidWord(TessBaseAPI* handle, const char *word);
 // BOOL TessBaseAPIGetTextDirection(TessBaseAPI* handle, int* out_offset, float* out_slope);

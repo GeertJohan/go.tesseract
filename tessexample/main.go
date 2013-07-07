@@ -31,14 +31,14 @@ func main() {
 	// retrieve text from the tesseract instance
 	fmt.Println(t.Text())
 
-	// // retrieve text from the tesseract instance
-	// fmt.Println(t.HOCRText(0))
+	// retrieve text from the tesseract instance
+	fmt.Println(t.HOCRText(0))
 
-	// // retrieve text from the tesseract instance
-	// fmt.Println(t.BoxText(0))
+	// retrieve text from the tesseract instance
+	fmt.Println(t.BoxText(0))
 
-	// // retrieve text from the tesseract instance
-	// fmt.Println(t.UNLVText())
+	// retrieve text from the tesseract instance
+	fmt.Println(t.UNLVText())
 
 	// dump variables for info
 	// t.DumpVariables()
