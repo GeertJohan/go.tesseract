@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/GeertJohan/go.leptonica"
-	"github.com/davecgh/go-spew/spew"
 	"unsafe"
 )
 
@@ -191,6 +190,11 @@ Print Tesseract parameters to the given file.
 func (t *Tess) DumpVariables() {
 	C.TessBaseAPIPrintVariables(t.tba, (*C.FILE)(C.stdout))
 }
+
+//++ TODO
+// func (t *Tess) delete() {}
+// func (t *Tess) Close() { t.delete() }
+// map t.delete() on t GC as hook/callback in NewXXX() call's
 
 // typedef struct TessPageIterator TessPageIterator;
 // typedef struct TessResultIterator TessResultIterator;
