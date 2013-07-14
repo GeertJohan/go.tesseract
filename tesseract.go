@@ -112,7 +112,7 @@ func (t *Tess) SetInputName(filename string) {
 
 // SetImagePix sets the input image using a leptonica Pix
 func (t *Tess) SetImagePix(pix *leptonica.Pix) {
-	C.TessBaseAPISetImage2(t.tba, (*[0]byte)(unsafe.Pointer(pix.CPIX)))
+	C.TessBaseAPISetImage2(t.tba, (*[0]byte)(unsafe.Pointer(pix.CPIX())))
 }
 
 /* char* TessBaseAPIGetUTF8Text(TessBaseAPI* handle);
