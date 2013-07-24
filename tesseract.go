@@ -6,9 +6,14 @@ package tesseract
 import "C"
 
 import (
+	"bytes"
 	"errors"
 	"github.com/GeertJohan/go.leptonica"
+	"io"
 	"runtime"
+	"strconv"
+	"strings"
+	"unicode/utf8"
 	"unsafe"
 )
 
@@ -153,12 +158,79 @@ as a UTF8 box file and must be freed with the delete [] operator.
 page_number is a 0-base page index that will appear in the box file.
 */
 
-// BoxText returns the box text for given pagenumber
-func (t *Tess) BoxText(pagenumber int) string {
+// BoxTextRaw returns the raw box text for given pagenumber
+func (t *Tess) BoxTextRaw(pagenumber int) string {
 	cText := C.TessBaseAPIGetBoxText(t.tba, C.int(pagenumber))
 	defer C.free(unsafe.Pointer(cText))
 	text := C.GoString(cText)
 	return text
+}
+
+// TODO: make this: `type BoxText []BoxCharacter` ?
+type BoxText struct {
+	Characters []BoxCharacter
+}
+
+type BoxCharacter struct {
+	Character  rune
+	StartX     uint32
+	StartY     uint32
+	EndX       uint32
+	EndY       uint32
+	Pagenumber uint32
+}
+
+// BoxText returns the output given by BoxTextRaw as BoxText object
+func (t *Tess) BoxText(pagenumber int) (*BoxText, error) {
+	text := t.BoxTextRaw(pagenumber)
+	textBuffer := bytes.NewBufferString(text)
+
+	bt := &BoxText{
+		Characters: make([]BoxCharacter, 0, len(text)),
+	}
+	for {
+		line, err := textBuffer.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				return bt, nil
+			}
+			return nil, err
+		}
+		line = strings.TrimRight(line, "\n")
+		fields := strings.Split(line, " ")
+		if len(fields) != 6 || utf8.RuneCountInString(fields[0]) != 1 {
+			return nil, errors.New("unexpected BoxText format")
+		}
+
+		sx, err := strconv.ParseUint(fields[1], 10, 32)
+		if err != nil {
+			return nil, err
+		}
+		sy, err := strconv.ParseUint(fields[2], 10, 32)
+		if err != nil {
+			return nil, err
+		}
+		ex, err := strconv.ParseUint(fields[3], 10, 32)
+		if err != nil {
+			return nil, err
+		}
+		ey, err := strconv.ParseUint(fields[4], 10, 32)
+		if err != nil {
+			return nil, err
+		}
+		pgnr, err := strconv.ParseUint(fields[5], 10, 32)
+		if err != nil {
+			return nil, err
+		}
+		bt.Characters = append(bt.Characters, BoxCharacter{
+			Character:  rune(fields[0][0]),
+			StartX:     uint32(sx),
+			StartY:     uint32(sy),
+			EndX:       uint32(ex),
+			EndY:       uint32(ey),
+			Pagenumber: uint32(pgnr),
+		})
+	}
 }
 
 /* char* TessBaseAPIGetUNLVText(TessBaseAPI* handle);
