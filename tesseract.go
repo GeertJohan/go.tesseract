@@ -1,6 +1,6 @@
 package tesseract
 
-// #cgo LDFLAGS: -ltesseract
+// #cgo LDFLAGS: -L /usr/local/lib -ltesseract
 // #include "tesseract/capi.h"
 // #include <stdlib.h>
 import "C"
@@ -181,8 +181,8 @@ type BoxCharacter struct {
 }
 
 // BoxText returns the output given by BoxTextRaw as BoxText object
-func (t *Tess) BoxText(pagenumber int) (*BoxText, error) {
-	text := t.BoxTextRaw(pagenumber)
+func (tess *Tess) BoxText(pagenumber int) (*BoxText, error) {
+	text := tess.BoxTextRaw(pagenumber)
 	textBuffer := bytes.NewBufferString(text)
 
 	bt := &BoxText{
