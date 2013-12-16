@@ -21,7 +21,9 @@ sudo ldconfig
 
 Copy language files (do this for any language you require)
 ```
-cp tessdata/eng.* /usr/local/share/tessdata/
+sudo cp tessdata/eng.* /usr/local/share/tessdata/
+sudo cp tessdata/nld.* /usr/local/share/tessdata/
+sudo cp tessdata/YOUR-LANGUAGE-SHORTCODE.* /usr/local/share/tessdata/
 ```
 
 For more information, view the tesseract [compilation guide](http://code.google.com/p/tesseract-ocr/wiki/Compiling).
