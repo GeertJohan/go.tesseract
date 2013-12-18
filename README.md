@@ -1,13 +1,19 @@
-## go.tesseract
-go.tesseract is a wrapper for the tesseract-ocr library.
+##go.tesseract
+go.tesseract is a wrapper for the tesseract OCR library (text-recognition from image/pdf).
 
-**go.tesseract is under heavy development and should not be used in a production environment.**
+**development disclaimer:** go.tesseract is under development and package outline is subject to change.
 
-### Installation
-You are required to install tesseract 3.02.02 or later. At time of writing this version of tesseract is not in the ubuntu repository yet. You absolutely need 3.02.02 (or later) as go.tesseract can not and will not compile with earlier versions.
+### Installation and dependencies
+go.tesseract has two direct dependencies; `go.leptonica` and `libtesseract`
 
-**Before you continue, make sure you have installed [go.leptonica](//github.com/GeertJohan/go.leptonica). Please follow the directions in it's readme.**
+Make sure you have installed [go.leptonica](//github.com/GeertJohan/go.leptonica). go.leptonica has a C library dependency, please read the [go.leptonica/README.md](//github.com/GeertJohan/go.leptonica/blob/master/README.md).
 
+You are required to install the tesseract library including development headers at version 3.02.02 or later. You absolutely need 3.02.02 (or later) as go.tesseract can not compile with earlier versions of tesseract. At time of writing this version of tesseract is not in the ubuntu/debian stable repository yet.
+
+#### Debian testing (jessie) package
+`aptitude install -t testing libtesseract3 libtesseract-dev`
+
+#### Manual installation
 Download, configure, make and install
 ```
 svn checkout http://tesseract-ocr.googlecode.com/svn/tags/release-3.02.02 tesseract-ocr-read-only
@@ -19,11 +25,24 @@ sudo make install
 sudo ldconfig
 ```
 
-Copy language files (do this for any language you require)
+#### Language files
+If you have installed from debian testing (jessie):
 ```
+aptitude install -t testing tesseract-ocr-YOUR-LANGUAGE-SHORTCODE
+
+# example, this installs dutch:
+aptitude install -t testing tesseract-ocr-nld
+
+# I believe english is installed by default with the libtesseract3 package
+```
+
+If you have installed manually; copy language files (do this for any language you require)
+```
+sudo cp tessdata/YOUR-LANGUAGE-SHORTCODE.* /usr/local/share/tessdata/
+
+# example for english and dutch:
 sudo cp tessdata/eng.* /usr/local/share/tessdata/
 sudo cp tessdata/nld.* /usr/local/share/tessdata/
-sudo cp tessdata/YOUR-LANGUAGE-SHORTCODE.* /usr/local/share/tessdata/
 ```
 
 For more information, view the tesseract [compilation guide](http://code.google.com/p/tesseract-ocr/wiki/Compiling).
