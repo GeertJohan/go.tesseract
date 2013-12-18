@@ -11,7 +11,7 @@ Make sure you have installed [go.leptonica](//github.com/GeertJohan/go.leptonica
 You are required to install the tesseract library including development headers at version 3.02.02 or later. You absolutely need 3.02.02 (or later) as go.tesseract can not compile with earlier versions of tesseract. At time of writing this version of tesseract is not in the ubuntu/debian stable repository yet.
 
 #### Debian testing (jessie) package
-`aptitude install -t testing libtesseract3 libtesseract-dev`
+`sudo apt-get install -t testing libtesseract3 libtesseract-dev`
 
 #### Manual installation
 Download, configure, make and install
@@ -28,10 +28,10 @@ sudo ldconfig
 #### Language files
 If you have installed from debian testing (jessie):
 ```
-aptitude install -t testing tesseract-ocr-YOUR-LANGUAGE-SHORTCODE
+sudo apt-get install -t testing tesseract-ocr-YOUR-LANGUAGE-SHORTCODE
 
 # example, this installs dutch:
-aptitude install -t testing tesseract-ocr-nld
+sudo apt-get install -t testing tesseract-ocr-nld
 
 # I believe english is installed by default with the libtesseract3 package
 ```
