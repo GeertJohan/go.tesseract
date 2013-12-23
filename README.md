@@ -30,10 +30,10 @@ If you have installed from debian testing (jessie):
 ```
 sudo apt-get install -t testing tesseract-ocr-YOUR-LANGUAGE-SHORTCODE
 
-# example, this installs dutch:
+# example, this installs dutch and english
 sudo apt-get install -t testing tesseract-ocr-nld
+sudo apt-get install -t testing tesseract-ocr-eng
 
-# I believe english is installed by default with the libtesseract3 package
 ```
 
 If you have installed manually; copy language files (do this for any language you require)
