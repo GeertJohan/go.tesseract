@@ -8,13 +8,14 @@ import "C"
 import (
 	"bytes"
 	"errors"
-	"github.com/GeertJohan/go.leptonica"
 	"io"
 	"runtime"
 	"strconv"
 	"strings"
 	"unicode/utf8"
 	"unsafe"
+
+	"github.com/GeertJohan/go.leptonica"
 )
 
 const version = "0.1"
@@ -231,6 +232,29 @@ func (tess *Tess) BoxText(pagenumber int) (*BoxText, error) {
 			Pagenumber: uint32(pgnr),
 		})
 	}
+}
+
+// typedef enum TessPageSegMode { PSM_OSD_ONLY, PSM_AUTO_OSD, PSM_AUTO_ONLY, PSM_AUTO, PSM_SINGLE_COLUMN, PSM_SINGLE_BLOCK_VERT_TEXT, PSM_SINGLE_BLOCK, PSM_SINGLE_LINE, PSM_SINGLE_WORD, PSM_CIRCLE_WORD, PSM_SINGLE_CHAR, PSM_COUNT } TessPageSegMode;
+type PageSegMode int
+
+const (
+	PSM_OSD_ONLY PageSegMode = iota
+	PSM_AUTO_OSD
+	PSM_AUTO_ONLY
+	PSM_AUTO
+	PSM_SINGLE_COLUMN
+	PSM_SINGLE_BLOCK_VERT_TEXT
+	PSM_SINGLE_BLOCK
+	PSM_SINGLE_LINE
+	PSM_SINGLE_WORD
+	PSM_CIRCLE_WORD
+	PSM_SINGLE_CHAR
+	PSM_COUNT
+)
+
+// void TessBaseAPISetPageSegMode(TessBaseAPI* handle, TessPageSegMode mode);
+func (tess *Tess) SetPageSegMode(psm PageSegMode) {
+	C.TessBaseAPISetPageSegMode(tess.tba, C.TessPageSegMode(psm))
 }
 
 /* char* TessBaseAPIGetUNLVText(TessBaseAPI* handle);

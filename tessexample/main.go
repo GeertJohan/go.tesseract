@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/GeertJohan/go.leptonica"
 	"github.com/GeertJohan/go.tesseract"
 	"github.com/davecgh/go-spew/spew"
-	"log"
 )
 
 func main() {
@@ -24,6 +25,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error while getting pix from file: %s\n", err)
 	}
+
+	// set the page seg mode to autodetect
+	t.SetPageSegMode(tesseract.PSM_AUTO_OSD)
 
 	// set the image to the tesseract instance
 	t.SetImagePix(pix)
