@@ -199,8 +199,13 @@ func (tess *Tess) BoxText(pagenumber int) (*BoxText, error) {
 		}
 		line = strings.TrimRight(line, "\n")
 		fields := strings.Split(line, " ")
-		if len(fields) != 6 || utf8.RuneCountInString(fields[0]) != 1 {
-			return nil, errors.New("unexpected BoxText format")
+		if len(fields) != 6 {
+			f := strconv.Itoa(len(fields))
+			return nil, errors.New("unexpected BoxText format (Length != 6) Length is: " + f)
+		}
+
+		if utf8.RuneCountInString(fields[0]) != 1 {
+			return nil, errors.New("unexpected BoxText format (RuneCount error): " + fields[0])
 		}
 
 		sx, err := strconv.ParseUint(fields[1], 10, 32)
