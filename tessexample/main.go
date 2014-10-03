@@ -29,6 +29,11 @@ func main() {
 	// set the page seg mode to autodetect
 	t.SetPageSegMode(tesseract.PSM_AUTO_OSD)
 
+	err = t.APISetVariable("tessedit_char_whitelist", ` !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_abcdefghijklmnopqrstuvwxyz{|}~`+"`")
+	if err != nil {
+		log.Fatalf("Failed to APISetVariable: %s\n", err)
+	}
+
 	// set the image to the tesseract instance
 	t.SetImagePix(pix)
 

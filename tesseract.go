@@ -339,6 +339,21 @@ func (t *Tess) DumpVariables() {
 	C.TessBaseAPIPrintVariables(t.tba, (*C.FILE)(C.stdout))
 }
 
+// BOOL TessBaseAPISetVariable(TessBaseAPI* handle, const char* name, const char* value);
+func (t *Tess) APISetVariable(name, value string) error {
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
+
+	cValue := C.CString(value)
+	defer C.free(unsafe.Pointer(cValue))
+
+	worked := C.TessBaseAPISetVariable(t.tba, cName, cValue)
+	if worked != 1 {
+		return errors.New("Unable to set the variable: " + name + " to " + value)
+	}
+	return nil
+}
+
 // typedef struct TessPageIterator TessPageIterator;
 // typedef struct TessResultIterator TessResultIterator;
 // typedef struct TessMutableIterator TessMutableIterator;
@@ -362,7 +377,6 @@ func (t *Tess) DumpVariables() {
 
 // void TessBaseAPISetOutputName(TessBaseAPI* handle, const char* name);
 
-// BOOL TessBaseAPISetVariable(TessBaseAPI* handle, const char* name, const char* value);
 // BOOL TessBaseAPISetDebugVariable(TessBaseAPI* handle, const char* name, const char* value);
 
 // BOOL TessBaseAPIGetIntVariable( const TessBaseAPI* handle, const char* name, int* value);
