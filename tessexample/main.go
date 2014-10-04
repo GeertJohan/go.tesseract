@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -11,6 +12,10 @@ import (
 )
 
 func main() {
+	// get the image to try
+	flag.Parse()
+	image := flag.Arg(0)
+
 	// print the version
 	fmt.Println(tesseract.Version())
 
@@ -26,7 +31,7 @@ func main() {
 	defer t.Close()
 
 	// open a new Pix from file with leptonica
-	pix, err := leptonica.NewPixFromFile("FelixScan.jpg")
+	pix, err := leptonica.NewPixFromFile(image)
 	if err != nil {
 		log.Fatalf("Error while getting pix from file: %s\n", err)
 	}
@@ -44,9 +49,6 @@ func main() {
 	// set the image to the tesseract instance
 	t.SetImagePix(pix)
 
-	// select just the first two columns
-	t.SetRectangle(30, 275, 1120, 1380)
-
 	// retrieve text from the tesseract instance
 	fmt.Println(t.Text())
 
@@ -54,6 +56,11 @@ func main() {
 	// fmt.Println(t.HOCRText(0))
 
 	// retrieve text from the tesseract instance
+	fmt.Println(t.BoxText(0))
+
+	// select just the first two columns
+	t.SetRectangle(30, 275, 1120, 1380)
+	fmt.Println(t.Text())
 	fmt.Println(t.BoxText(0))
 
 	// // retrieve text from the tesseract instance
