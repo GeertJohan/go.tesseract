@@ -340,7 +340,7 @@ func (t *Tess) DumpVariables() {
 }
 
 // BOOL TessBaseAPISetVariable(TessBaseAPI* handle, const char* name, const char* value);
-func (t *Tess) APISetVariable(name, value string) error {
+func (t *Tess) SetVariable(name, value string) error {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
 
@@ -352,6 +352,11 @@ func (t *Tess) APISetVariable(name, value string) error {
 		return errors.New("Unable to set the variable: " + name + " to " + value)
 	}
 	return nil
+}
+
+// void TessBaseAPISetRectangle(TessBaseAPI* handle, int left, int top, int width, int height);
+func (t *Tess) SetRectangle(left, top, width, height int) {
+	C.TessBaseAPISetRectangle(t.tba, C.int(left), C.int(top), C.int(width), C.int(height))
 }
 
 // typedef struct TessPageIterator TessPageIterator;
@@ -406,8 +411,6 @@ func (t *Tess) APISetVariable(name, value string) error {
 // void TessBaseAPISetImage(TessBaseAPI* handle, const unsigned char* imagedata, int width, int height, int bytes_per_pixel, int bytes_per_line);
 
 // void TessBaseAPISetSourceResolution(TessBaseAPI* handle, int ppi);
-
-// void TessBaseAPISetRectangle(TessBaseAPI* handle, int left, int top, int width, int height);
 
 // PIX* TessBaseAPIGetThresholdedImage( TessBaseAPI* handle);
 // BOXA* TessBaseAPIGetRegions( TessBaseAPI* handle, PIXA** pixa);

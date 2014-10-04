@@ -3,10 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/GeertJohan/go.leptonica"
 	"github.com/GeertJohan/go.tesseract"
-	"github.com/davecgh/go-spew/spew"
 )
 
 func main() {
@@ -14,28 +15,37 @@ func main() {
 	fmt.Println(tesseract.Version())
 
 	// create new tess instance and point it to the tessdata location. Set language to english.
-	t, err := tesseract.NewTess("/usr/local/share/tessdata", "eng")
+	tessdata_prefix := os.Getenv("TESSDATA_PREFIX")
+	if tessdata_prefix == "" {
+		tessdata_prefix = "/usr/local/share"
+	}
+	t, err := tesseract.NewTess(filepath.Join(tessdata_prefix, "tessdata"), "eng")
 	if err != nil {
 		log.Fatalf("Error while initializing Tess: %s\n", err)
 	}
 	defer t.Close()
 
 	// open a new Pix from file with leptonica
-	pix, err := leptonica.NewPixFromFile("./differentFonts.png")
+	pix, err := leptonica.NewPixFromFile("FelixScan.jpg")
 	if err != nil {
 		log.Fatalf("Error while getting pix from file: %s\n", err)
 	}
+	defer pix.Close() // remember to cleanup
 
 	// set the page seg mode to autodetect
 	t.SetPageSegMode(tesseract.PSM_AUTO_OSD)
 
-	err = t.APISetVariable("tessedit_char_whitelist", ` !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_abcdefghijklmnopqrstuvwxyz{|}~`+"`")
+	// setup a whitelist of all basic ascii
+	err = t.SetVariable("tessedit_char_whitelist", ` !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_abcdefghijklmnopqrstuvwxyz{|}~`+"`")
 	if err != nil {
-		log.Fatalf("Failed to APISetVariable: %s\n", err)
+		log.Fatalf("Failed to SetVariable: %s\n", err)
 	}
 
 	// set the image to the tesseract instance
 	t.SetImagePix(pix)
+
+	// select just the first two columns
+	t.SetRectangle(30, 275, 1120, 1380)
 
 	// retrieve text from the tesseract instance
 	fmt.Println(t.Text())
@@ -52,5 +62,5 @@ func main() {
 	// dump variables for info
 	// t.DumpVariables()
 
-	spew.Dump(t.AvailableLanguages())
+	//spew.Dump(t.AvailableLanguages())
 }
