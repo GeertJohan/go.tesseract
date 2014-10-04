@@ -58,7 +58,7 @@ func main() {
 	// retrieve text from the tesseract instance
 	fmt.Println(t.BoxText(0))
 
-	// select just the first two columns
+	// now select just the first two columns (if using FelixScan.jpg)
 	t.SetRectangle(30, 275, 1120, 1380)
 	fmt.Println(t.Text())
 	fmt.Println(t.BoxText(0))
