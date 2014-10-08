@@ -8,13 +8,14 @@ import "C"
 import (
 	"bytes"
 	"errors"
-	"github.com/GeertJohan/go.leptonica"
 	"io"
 	"runtime"
 	"strconv"
 	"strings"
 	"unicode/utf8"
 	"unsafe"
+
+	"github.com/GeertJohan/go.leptonica"
 )
 
 const version = "0.1"
@@ -198,8 +199,12 @@ func (tess *Tess) BoxText(pagenumber int) (*BoxText, error) {
 		}
 		line = strings.TrimRight(line, "\n")
 		fields := strings.Split(line, " ")
-		if len(fields) != 6 || utf8.RuneCountInString(fields[0]) != 1 {
-			return nil, errors.New("unexpected BoxText format")
+		if len(fields) != 6 {
+			f := strconv.Itoa(len(fields))
+			return nil, errors.New("unexpected BoxText format (Length != 6) Length is: " + f)
+		}
+		if utf8.RuneCountInString(fields[0]) != 1 {
+			return nil, errors.New("unexpected BoxText format (RuneCount error): " + fields[0])
 		}
 
 		sx, err := strconv.ParseUint(fields[1], 10, 32)
@@ -231,6 +236,29 @@ func (tess *Tess) BoxText(pagenumber int) (*BoxText, error) {
 			Pagenumber: uint32(pgnr),
 		})
 	}
+}
+
+// typedef enum TessPageSegMode { PSM_OSD_ONLY, PSM_AUTO_OSD, PSM_AUTO_ONLY, PSM_AUTO, PSM_SINGLE_COLUMN, PSM_SINGLE_BLOCK_VERT_TEXT, PSM_SINGLE_BLOCK, PSM_SINGLE_LINE, PSM_SINGLE_WORD, PSM_CIRCLE_WORD, PSM_SINGLE_CHAR, PSM_COUNT } TessPageSegMode;
+type PageSegMode int
+
+const (
+	PSM_OSD_ONLY PageSegMode = iota
+	PSM_AUTO_OSD
+	PSM_AUTO_ONLY
+	PSM_AUTO
+	PSM_SINGLE_COLUMN
+	PSM_SINGLE_BLOCK_VERT_TEXT
+	PSM_SINGLE_BLOCK
+	PSM_SINGLE_LINE
+	PSM_SINGLE_WORD
+	PSM_CIRCLE_WORD
+	PSM_SINGLE_CHAR
+	PSM_COUNT
+)
+
+// void TessBaseAPISetPageSegMode(TessBaseAPI* handle, TessPageSegMode mode);
+func (tess *Tess) SetPageSegMode(psm PageSegMode) {
+	C.TessBaseAPISetPageSegMode(tess.tba, C.TessPageSegMode(psm))
 }
 
 /* char* TessBaseAPIGetUNLVText(TessBaseAPI* handle);
@@ -310,6 +338,26 @@ func (t *Tess) DumpVariables() {
 	C.TessBaseAPIPrintVariables(t.tba, (*C.FILE)(C.stdout))
 }
 
+// BOOL TessBaseAPISetVariable(TessBaseAPI* handle, const char* name, const char* value);
+func (t *Tess) SetVariable(name, value string) error {
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
+
+	cValue := C.CString(value)
+	defer C.free(unsafe.Pointer(cValue))
+
+	worked := C.TessBaseAPISetVariable(t.tba, cName, cValue)
+	if worked != 1 {
+		return errors.New("Unable to set the variable: " + name + " to " + value)
+	}
+	return nil
+}
+
+// void TessBaseAPISetRectangle(TessBaseAPI* handle, int left, int top, int width, int height);
+func (t *Tess) SetRectangle(left, top, width, height int) {
+	C.TessBaseAPISetRectangle(t.tba, C.int(left), C.int(top), C.int(width), C.int(height))
+}
+
 // typedef struct TessPageIterator TessPageIterator;
 // typedef struct TessResultIterator TessResultIterator;
 // typedef struct TessMutableIterator TessMutableIterator;
@@ -333,7 +381,6 @@ func (t *Tess) DumpVariables() {
 
 // void TessBaseAPISetOutputName(TessBaseAPI* handle, const char* name);
 
-// BOOL TessBaseAPISetVariable(TessBaseAPI* handle, const char* name, const char* value);
 // BOOL TessBaseAPISetDebugVariable(TessBaseAPI* handle, const char* name, const char* value);
 
 // BOOL TessBaseAPIGetIntVariable( const TessBaseAPI* handle, const char* name, int* value);
@@ -363,8 +410,6 @@ func (t *Tess) DumpVariables() {
 // void TessBaseAPISetImage(TessBaseAPI* handle, const unsigned char* imagedata, int width, int height, int bytes_per_pixel, int bytes_per_line);
 
 // void TessBaseAPISetSourceResolution(TessBaseAPI* handle, int ppi);
-
-// void TessBaseAPISetRectangle(TessBaseAPI* handle, int left, int top, int width, int height);
 
 // PIX* TessBaseAPIGetThresholdedImage( TessBaseAPI* handle);
 // BOXA* TessBaseAPIGetRegions( TessBaseAPI* handle, PIXA** pixa);
