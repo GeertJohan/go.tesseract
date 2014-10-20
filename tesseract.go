@@ -8,7 +8,7 @@ import "C"
 import (
 	"bytes"
 	"errors"
-	"github.com/GeertJohan/go.leptonica"
+	"gopkg.in/GeertJohan/go.leptonica.v1"
 	"io"
 	"runtime"
 	"strconv"
@@ -17,7 +17,7 @@ import (
 	"unsafe"
 )
 
-const version = "0.1"
+const version = "1.0"
 
 // typedef struct TessBaseAPI TessBaseAPI;
 
