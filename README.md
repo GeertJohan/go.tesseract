@@ -22,8 +22,8 @@ Do the following before trying to `go get` this package:
 ```
 $ brew install leptonica
 $ brew install tesseract
-$ export CGO_LDFLAGS="-L/usr/local/Cellar/leptonica/1.69_1/lib -L/usr/local/Cellar/tesseract/3.02.02/lib"
-$ export CGO_CFLAGS="-I/usr/local/Cellar/leptonica/1.69_1/include -I/usr/local/Cellar/tesseract/3.02.02/include"
+$ export CGO_LDFLAGS="-L$(brew --prefix leptonica)/lib -L$(brew --prefix tesseract)/lib"
+$ export CGO_CFLAGS="-I$(brew --prefix leptonica)/include -I$(brew --prefix tesseract)/include"
 ```
 
 *Note*: this assumes you are using the standard Brew path of `/usr/local/Cellar`
