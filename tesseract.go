@@ -44,15 +44,21 @@ func NewTess(datapath string, language string) (*Tess, error) {
 	tba := C.TessBaseAPICreate()
 
 	// prepare string for C call
-	cDatapath := C.CString(datapath)
-	defer C.free(unsafe.Pointer(cDatapath))
-
-	// prepare string for C call
 	cLanguage := C.CString(language)
 	defer C.free(unsafe.Pointer(cLanguage))
 
-	// initialize datapath and language on TessBaseAPI
-	res := C.TessBaseAPIInit3(tba, cDatapath, cLanguage)
+	var res C.int
+	if datapath != "" {
+		// prepare string for C call
+		cDatapath := C.CString(datapath)
+		defer C.free(unsafe.Pointer(cDatapath))
+
+		// initialize datapath and language on TessBaseAPI
+		res = C.TessBaseAPIInit3(tba, cDatapath, cLanguage)
+	} else {
+		res = C.TessBaseAPIInit3(tba, nil, cLanguage)
+	}
+
 	if res != 0 {
 		return nil, errors.New("could not initiate new Tess instance")
 	}
