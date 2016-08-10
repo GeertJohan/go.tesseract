@@ -29,7 +29,7 @@ type Tess struct {
 
 // const char* TessVersion();
 
-// Version returns both go.tesseract's version as well as the version from the tesseract lib (>3.02.02)
+// Version returns both go.tesseract's version as well as the version from the tesseract lib (>3.04.00)
 func Version() string {
 	libTessVersion := C.TessVersion()
 	return "go.tesseract:" + version + " tesseract lib:" + C.GoString(libTessVersion)
