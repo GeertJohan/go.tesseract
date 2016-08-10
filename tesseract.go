@@ -39,6 +39,10 @@ func Version() string {
 // int TessBaseAPIInit3(TessBaseAPI* handle, const char* datapath, const char* language);
 
 // NewTess creates and returns a new tesseract instance.
+// When datapath is an empty string, the TESSDATA_PREFIX environment variable
+// is used. If it's empty, the compile-time TESSDATA_PREFIX constant is used
+// instead. If it was not defined, datapath is set to the current working
+// directory.
 func NewTess(datapath string, language string) (*Tess, error) {
 	// create new empty TessBaseAPI
 	tba := C.TessBaseAPICreate()
@@ -48,6 +52,7 @@ func NewTess(datapath string, language string) (*Tess, error) {
 	defer C.free(unsafe.Pointer(cLanguage))
 
 	var res C.int
+	// Tesseract ignores TESSDATA_PREFIX when datapath is not NULL
 	if datapath != "" {
 		// prepare string for C call
 		cDatapath := C.CString(datapath)
