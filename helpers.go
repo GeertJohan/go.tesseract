@@ -7,6 +7,14 @@ import (
 	"unsafe"
 )
 
+func gobool(b C.int) bool {
+	if b != 0 {
+		return true
+	}
+
+	return false
+}
+
 func cStringVectorToStringslice(cStringVector **C.char) []string {
 	// get pointer size to do iteration
 	cPtrSize := unsafe.Sizeof(cStringVector)
