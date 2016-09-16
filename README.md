@@ -6,13 +6,13 @@ go.tesseract has two direct dependencies; `go.leptonica` and `libtesseract`
 
 Make sure you have installed [go.leptonica](//github.com/GeertJohan/go.leptonica). go.leptonica has a C library dependency, please read the [go.leptonica/README.md](//github.com/GeertJohan/go.leptonica/blob/master/README.md).
 
-You are required to install the tesseract library including development headers at version 3.02.02 or later. You absolutely need 3.02.02 (or later) as go.tesseract can not compile with earlier versions of tesseract. At time of writing this version of tesseract is not in the ubuntu/debian stable repository yet.
+You are required to install the tesseract library including development headers at version 3.04.00 or later. You absolutely need 3.04.00 (or later) as go.tesseract can not compile with earlier versions of tesseract. At time of writing this version of tesseract is not in the ubuntu/debian stable repository yet.
 
 go.tesseract uses gopkg.in for versioned releases:
 
 `go get gopkg.in/GeertJohan/go.tesseract.v1`
 
-#### Debian testing (jessie) package
+#### Debian testing (stretch) package
 `sudo apt-get install -t testing libtesseract3 libtesseract-dev`
 
 #### OSX with Homebrew
@@ -31,8 +31,9 @@ $ export CGO_CFLAGS="-I$(brew --prefix leptonica)/include -I$(brew --prefix tess
 #### Manual installation
 Download, configure, make and install
 ```
-svn checkout http://tesseract-ocr.googlecode.com/svn/tags/release-3.02.02 tesseract-ocr-read-only
-cd tesseract-ocr-read-only
+git clone https://github.com/tesseract-ocr/tesseract
+cd tesseract
+git checkout tags/3.04.00
 ./autogen.sh
 ./configure
 make

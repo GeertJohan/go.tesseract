@@ -29,7 +29,7 @@ type Tess struct {
 
 // const char* TessVersion();
 
-// Version returns both go.tesseract's version as well as the version from the tesseract lib (>3.02.02)
+// Version returns both go.tesseract's version as well as the version from the tesseract lib (>3.04.00)
 func Version() string {
 	libTessVersion := C.TessVersion()
 	return "go.tesseract:" + version + " tesseract lib:" + C.GoString(libTessVersion)
@@ -411,6 +411,18 @@ func (r *ResultIterator) Next(level PageIteratorLevel) bool {
 	return gobool(C.TessResultIteratorNext(r.ri, C.TessPageIteratorLevel(level)))
 }
 
+// TESS_API TessChoiceIterator* TESS_CALL TessResultIteratorGetChoiceIterator(const TessResultIterator* handle);
+func (r *ResultIterator) ChoiceIterator() *ChoiceIterator {
+	ci := C.TessResultIteratorGetChoiceIterator(r.ri)
+
+	choiceIterator := &ChoiceIterator{
+		ci: ci,
+	}
+
+	runtime.SetFinalizer(choiceIterator, (*ChoiceIterator).delete)
+	return choiceIterator
+}
+
 // char* TessResultIteratorGetUTF8Text(const TessResultIterator* handle, TessPageIteratorLevel level);
 func (r *ResultIterator) Text(level PageIteratorLevel) (string, error) {
 	cText := C.TessResultIteratorGetUTF8Text(r.ri, C.TessPageIteratorLevel(level))
@@ -422,11 +434,38 @@ func (r *ResultIterator) Text(level PageIteratorLevel) (string, error) {
 	return text, nil
 }
 
+// typedef struct TessChoiceIterator TessChoiceIterator;
+type ChoiceIterator struct {
+	ci *C.TessChoiceIterator
+}
+
+//TESS_API void  TESS_CALL TessChoiceIteratorDelete(TessChoiceIterator* handle);
+func (c *ChoiceIterator) delete() {
+	if c.ci != nil {
+		C.TessChoiceIteratorDelete(c.ci)
+	}
+}
+
+//TESS_API BOOL  TESS_CALL TessChoiceIteratorNext(TessChoiceIterator* handle);
+func (c *ChoiceIterator) Next() bool {
+	return gobool(C.TessChoiceIteratorNext(c.ci))
+}
+
+//TESS_API const char* TESS_CALL TessChoiceIteratorGetUTF8Text(const TessChoiceIterator* handle);
+func (c *ChoiceIterator) Text() (string, error) {
+	cText := C.TessChoiceIteratorGetUTF8Text(c.ci)
+	if cText == nil {
+		return "", errors.New("already at the end")
+	}
+	// from ccmain/ltrresultiterator.cpp: "Do NOT use delete [] to free after use."
+	//defer C.free(unsafe.Pointer(cText))
+	text := C.GoString(cText)
+	return text, nil
+}
+
 // typedef struct TessPageIterator TessPageIterator;
 // typedef struct TessMutableIterator TessMutableIterator;
 // typedef enum TessOcrEngineMode { OEM_TESSERACT_ONLY, OEM_CUBE_ONLY, OEM_TESSERACT_CUBE_COMBINED, OEM_DEFAULT } TessOcrEngineMode;
-// typedef enum TessPageSegMode { PSM_OSD_ONLY, PSM_AUTO_OSD, PSM_AUTO_ONLY, PSM_AUTO, PSM_SINGLE_COLUMN, PSM_SINGLE_BLOCK_VERT_TEXT, PSM_SINGLE_BLOCK, PSM_SINGLE_LINE, PSM_SINGLE_WORD, PSM_CIRCLE_WORD, PSM_SINGLE_CHAR, PSM_COUNT } TessPageSegMode;
-// typedef enum TessPageIteratorLevel { RIL_BLOCK, RIL_PARA, RIL_TEXTLINE, RIL_WORD, RIL_SYMBOL} TessPageIteratorLevel;
 // typedef enum TessPolyBlockType { PT_UNKNOWN, PT_FLOWING_TEXT, PT_HEADING_TEXT, PT_PULLOUT_TEXT, PT_TABLE, PT_VERTICAL_TEXT, PT_CAPTION_TEXT, PT_FLOWING_IMAGE, PT_HEADING_IMAGE, PT_PULLOUT_IMAGE, PT_HORZ_LINE, PT_VERT_LINE, PT_NOISE, PT_COUNT } TessPolyBlockType;
 // typedef enum TessOrientation { ORIENTATION_PAGE_UP, ORIENTATION_PAGE_RIGHT, ORIENTATION_PAGE_DOWN, ORIENTATION_PAGE_LEFT } TessOrientation;
 // typedef enum TessWritingDirection { WRITING_DIRECTION_LEFT_TO_RIGHT, WRITING_DIRECTION_RIGHT_TO_LEFT, WRITING_DIRECTION_TOP_TO_BOTTOM } TessWritingDirection;
@@ -524,7 +563,6 @@ func (r *ResultIterator) Text(level PageIteratorLevel) (string, error) {
 // TessResultIterator* TessResultIteratorCopy(const TessResultIterator* handle);
 // TessPageIterator* TessResultIteratorGetPageIterator(TessResultIterator* handle);
 // const TessPageIterator* TessResultIteratorGetPageIteratorConst(const TessResultIterator* handle);
-// char* TessResultIteratorGetUTF8Text(const TessResultIterator* handle, TessPageIteratorLevel level);
 // float TessResultIteratorConfidence(const TessResultIterator* handle, TessPageIteratorLevel level);
 // const char* TessResultIteratorWordFontAttributes(const TessResultIterator* handle, BOOL* is_bold, BOOL* is_italic, BOOL* is_underlined, BOOL* is_monospace, BOOL* is_serif, BOOL* is_smallcaps, int* pointsize, int* font_id);
 // BOOL TessResultIteratorWordIsFromDictionary(const TessResultIterator* handle);
@@ -532,3 +570,6 @@ func (r *ResultIterator) Text(level PageIteratorLevel) (string, error) {
 // BOOL TessResultIteratorSymbolIsSuperscript(const TessResultIterator* handle);
 // BOOL TessResultIteratorSymbolIsSubscript(const TessResultIterator* handle);
 // BOOL TessResultIteratorSymbolIsDropcap(const TessResultIterator* handle);
+
+// /* Choice iterator */
+//TESS_API float TESS_CALL TessChoiceIteratorConfidence(const TessChoiceIterator* handle);
