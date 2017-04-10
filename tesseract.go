@@ -15,7 +15,7 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
-	"gopkg.in/GeertJohan/go.leptonica.v1"
+	"github.com/GeertJohan/go.leptonica"
 )
 
 const version = "1.0"
@@ -423,14 +423,136 @@ func (r *ResultIterator) Text(level PageIteratorLevel) (string, error) {
 }
 
 // typedef struct TessPageIterator TessPageIterator;
+type PageIterator struct {
+	pi *C.TessPageIterator
+}
+
+// TessPageIterator* TessBaseAPIAnalyseLayout(TessBaseAPI* handle);
+func (t *Tess) AnalyseLayout() (*PageIterator, error) {
+	pi := C.TessBaseAPIAnalyseLayout(t.tba)
+
+	if pi == nil {
+		return nil, errors.New("no page iterator")
+	}
+
+	pageIterator := &PageIterator{
+		pi: pi,
+	}
+
+	runtime.SetFinalizer(pageIterator, (*PageIterator).delete)
+	return pageIterator, nil
+}
+
+// void TessPageIteratorDelete(TessPageIterator* handle);
+func (pi *PageIterator) delete() {
+	if pi.pi != nil {
+		C.TessPageIteratorDelete(pi.pi)
+	}
+}
+
+// typedef enum TessOrientation { ORIENTATION_PAGE_UP, ORIENTATION_PAGE_RIGHT, ORIENTATION_PAGE_DOWN, ORIENTATION_PAGE_LEFT } TessOrientation;
+type Orientation int
+
+const (
+	ORIENTATION_PAGE_UP Orientation = iota
+	ORIENTATION_PAGE_RIGHT
+	ORIENTATION_PAGE_DOWN
+	ORIENTATION_PAGE_LEFT
+)
+
+// typedef enum TessWritingDirection { WRITING_DIRECTION_LEFT_TO_RIGHT, WRITING_DIRECTION_RIGHT_TO_LEFT, WRITING_DIRECTION_TOP_TO_BOTTOM } TessWritingDirection;
+type WritingDirection int
+
+const (
+	WRITING_DIRECTION_LEFT_TO_RIGHT WritingDirection = iota
+	WRITING_DIRECTION_RIGHT_TO_LEFT
+	WRITING_DIRECTION_TOP_TO_BOTTOM
+)
+
+// typedef enum TessTextlineOrder { TEXTLINE_ORDER_LEFT_TO_RIGHT, TEXTLINE_ORDER_RIGHT_TO_LEFT, TEXTLINE_ORDER_TOP_TO_BOTTOM } TessTextlineOrder;
+type TextlineOrder int
+
+const (
+	TEXTLINE_ORDER_LEFT_TO_RIGHT TextlineOrder = iota
+	TEXTLINE_ORDER_RIGHT_TO_LEFT
+	TEXTLINE_ORDER_TOP_TO_BOTTOM
+)
+
+// void TessPageIteratorOrientation(TessPageIterator* handle, TessOrientation *orientation, TessWritingDirection *writing_direction, TessTextlineOrder *textline_order, float *deskew_angle);
+type OrientationResult struct {
+	Orientation int
+	WritingDirection int
+	WritingOrder int
+	DeskewAngle float64
+}
+
+func (t *Tess) Orientation() (*OrientationResult, error) {
+	var cOrientation *C.TessOrientation = new(C.TessOrientation)
+	var orientation int
+
+	var cWritingDirection *C.TessWritingDirection = new(C.TessWritingDirection)
+	var writingDirection int
+
+	var cWritingOrder *C.TessTextlineOrder = new(C.TessTextlineOrder)
+	var writingOrder int
+
+	var cDeskewAngle *C.float = new(C.float)
+	var deskewAngle float64
+
+
+	pageIterator, err := t.AnalyseLayout()
+	if err != nil {
+		return nil, err
+	}
+
+	C.TessPageIteratorOrientation(pageIterator.pi, cOrientation, cWritingDirection, cWritingOrder, cDeskewAngle)
+
+	switch Orientation(*cOrientation) {
+	case ORIENTATION_PAGE_UP:
+		orientation = 0
+	case ORIENTATION_PAGE_RIGHT:
+		orientation = 1
+	case ORIENTATION_PAGE_DOWN:
+		orientation = 2
+	case ORIENTATION_PAGE_LEFT:
+		orientation = 3
+	}
+
+	switch WritingDirection(*cWritingDirection) {
+	case WRITING_DIRECTION_LEFT_TO_RIGHT:
+		writingDirection = 0
+	case WRITING_DIRECTION_RIGHT_TO_LEFT:
+		writingDirection = 1
+	case WRITING_DIRECTION_TOP_TO_BOTTOM:
+		writingDirection = 2
+	}
+
+	switch TextlineOrder(*cWritingOrder) {
+	case TEXTLINE_ORDER_LEFT_TO_RIGHT:
+		writingOrder = 0
+	case TEXTLINE_ORDER_RIGHT_TO_LEFT:
+		writingOrder = 1
+	case TEXTLINE_ORDER_TOP_TO_BOTTOM:
+		writingOrder = 2
+	}
+
+	deskewAngle = float64(*cDeskewAngle)
+
+	orientationResult := &OrientationResult{
+		Orientation: orientation,
+		WritingDirection: writingDirection,
+		WritingOrder: writingOrder,
+		DeskewAngle: deskewAngle,
+	}
+
+	return orientationResult, nil
+}
+
 // typedef struct TessMutableIterator TessMutableIterator;
 // typedef enum TessOcrEngineMode { OEM_TESSERACT_ONLY, OEM_CUBE_ONLY, OEM_TESSERACT_CUBE_COMBINED, OEM_DEFAULT } TessOcrEngineMode;
 // typedef enum TessPageSegMode { PSM_OSD_ONLY, PSM_AUTO_OSD, PSM_AUTO_ONLY, PSM_AUTO, PSM_SINGLE_COLUMN, PSM_SINGLE_BLOCK_VERT_TEXT, PSM_SINGLE_BLOCK, PSM_SINGLE_LINE, PSM_SINGLE_WORD, PSM_CIRCLE_WORD, PSM_SINGLE_CHAR, PSM_COUNT } TessPageSegMode;
 // typedef enum TessPageIteratorLevel { RIL_BLOCK, RIL_PARA, RIL_TEXTLINE, RIL_WORD, RIL_SYMBOL} TessPageIteratorLevel;
 // typedef enum TessPolyBlockType { PT_UNKNOWN, PT_FLOWING_TEXT, PT_HEADING_TEXT, PT_PULLOUT_TEXT, PT_TABLE, PT_VERTICAL_TEXT, PT_CAPTION_TEXT, PT_FLOWING_IMAGE, PT_HEADING_IMAGE, PT_PULLOUT_IMAGE, PT_HORZ_LINE, PT_VERT_LINE, PT_NOISE, PT_COUNT } TessPolyBlockType;
-// typedef enum TessOrientation { ORIENTATION_PAGE_UP, ORIENTATION_PAGE_RIGHT, ORIENTATION_PAGE_DOWN, ORIENTATION_PAGE_LEFT } TessOrientation;
-// typedef enum TessWritingDirection { WRITING_DIRECTION_LEFT_TO_RIGHT, WRITING_DIRECTION_RIGHT_TO_LEFT, WRITING_DIRECTION_TOP_TO_BOTTOM } TessWritingDirection;
-// typedef enum TessTextlineOrder { TEXTLINE_ORDER_LEFT_TO_RIGHT, TEXTLINE_ORDER_RIGHT_TO_LEFT, TEXTLINE_ORDER_TOP_TO_BOTTOM } TessTextlineOrder;
 // typedef struct ETEXT_DESC ETEXT_DESC;
 // typedef struct Pix PIX;
 // typedef struct Boxa BOXA;
@@ -486,8 +608,6 @@ func (r *ResultIterator) Text(level PageIteratorLevel) (string, error) {
 
 // void TessBaseAPIDumpPGM(TessBaseAPI* handle, const char* filename);
 
-// TessPageIterator* TessBaseAPIAnalyseLayout(TessBaseAPI* handle);
-
 // int TessBaseAPIRecognizeForChopTest(TessBaseAPI* handle, ETEXT_DESC* monitor);
 // char* TessBaseAPIProcessPages(TessBaseAPI* handle, const char* filename, const char* retry_config, int timeout_millisec);
 // char* TessBaseAPIProcessPage(TessBaseAPI* handle, PIX* pix, int page_index, const char* filename, const char* retry_config, int timeout_millisec);
@@ -505,7 +625,6 @@ func (r *ResultIterator) Text(level PageIteratorLevel) (string, error) {
 // void TessBaseAPISetMinOrientationMargin(TessBaseAPI* handle, double margin);
 
 // /* Page iterator */
-// void TessPageIteratorDelete(TessPageIterator* handle);
 // TessPageIterator* TessPageIteratorCopy(const TessPageIterator* handle);
 // void TessPageIteratorBegin(TessPageIterator* handle);
 // BOOL TessPageIteratorNext(TessPageIterator* handle, TessPageIteratorLevel level);
@@ -518,7 +637,6 @@ func (r *ResultIterator) Text(level PageIteratorLevel) (string, error) {
 // PIX* TessPageIteratorGetBinaryImage(const TessPageIterator* handle, TessPageIteratorLevel level);
 // PIX* TessPageIteratorGetImage(const TessPageIterator* handle, TessPageIteratorLevel level, int padding, int* left, int* top);
 // BOOL TessPageIteratorBaseline(const TessPageIterator* handle, TessPageIteratorLevel level, int* x1, int* y1, int* x2, int* y2);
-// void TessPageIteratorOrientation(TessPageIterator* handle, TessOrientation *orientation, TessWritingDirection *writing_direction, TessTextlineOrder *textline_order, float *deskew_angle);
 
 // /* Result iterator */
 // TessResultIterator* TessResultIteratorCopy(const TessResultIterator* handle);

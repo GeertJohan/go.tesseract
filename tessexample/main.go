@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/GeertJohan/go.leptonica"
-	"github.com/GeertJohan/go.tesseract"
+	"github.com/gmaliar/go.tesseract"
 )
 
 func main() {
@@ -62,6 +62,16 @@ func main() {
 	t.SetRectangle(30, 275, 1120, 1380)
 	fmt.Println(t.Text())
 	fmt.Println(t.BoxText(0))
+
+	o, err := t.Orientation()
+	if err != nil {
+		log.Fatalf("Failed to analyse orientation %s\n", err)
+	}
+
+	fmt.Printf("Orientation: %d\n", o.Orientation)
+	fmt.Printf("Writing Direction: %d\n", o.WritingDirection)
+	fmt.Printf("Writing Order: %d\n", o.WritingOrder)
+	fmt.Printf("Orientation: %f\n", o.DeskewAngle)
 
 	// // retrieve text from the tesseract instance
 	// fmt.Println(t.UNLVText())
