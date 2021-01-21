@@ -15,7 +15,7 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
-	"gopkg.in/GeertJohan/go.leptonica.v1"
+	leptonica "gopkg.in/GeertJohan/go.leptonica.v1"
 )
 
 const version = "1.0"
@@ -147,6 +147,21 @@ STL removed from original patch submission and refactored by rays.
 // HOCRText returns the HOCR text for given pagenumber
 func (t *Tess) HOCRText(pagenumber int) string {
 	cText := C.TessBaseAPIGetHOCRText(t.tba, C.int(pagenumber))
+	defer C.free(unsafe.Pointer(cText))
+	text := C.GoString(cText)
+	return text
+}
+
+/* char* TessBaseAPIGetTsvText(TessBaseAPI* handle, int page_number);
+
+Make a TSV-formatted string from the internal data structures.
+page_number is 0-based but will appear in the output as 1-based.
+Returned string must be freed with the delete [] operator.
+*/
+
+// TSVText returns a TSV-formatted string.
+func (t *Tess) TSVText(pagenumber int) string {
+	cText := C.TessBaseAPIGetTsvText(t.tba, C.int(pagenumber))
 	defer C.free(unsafe.Pointer(cText))
 	text := C.GoString(cText)
 	return text
