@@ -15,7 +15,7 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
-	"gopkg.in/GeertJohan/go.leptonica.v1"
+	leptonica "gopkg.in/GeertJohan/go.leptonica.v1"
 )
 
 const version = "1.0"
@@ -121,6 +121,14 @@ func (t *Tess) SetImagePix(pix *leptonica.Pix) {
 	C.TessBaseAPISetImage2(t.tba, (*C.struct_Pix)(unsafe.Pointer(pix.CPIX())))
 }
 
+// void TessBaseAPISetSourceResolution(TessBaseAPI* handle, int ppi);
+
+// SetSourceResolution set the resolution of the source image in pixels per inch.
+// The must be called after SetInputName or SetImagePix and has the same reslut as the --dpi flag.
+func (t *Tess) SetSourceResolution(ppi int) {
+	C.TessBaseAPISetSourceResolution(t.tba, C.int(ppi))
+}
+
 /* char* TessBaseAPIGetUTF8Text(TessBaseAPI* handle);
 
 Make a text string from the internal data structures.
@@ -147,6 +155,21 @@ STL removed from original patch submission and refactored by rays.
 // HOCRText returns the HOCR text for given pagenumber
 func (t *Tess) HOCRText(pagenumber int) string {
 	cText := C.TessBaseAPIGetHOCRText(t.tba, C.int(pagenumber))
+	defer C.free(unsafe.Pointer(cText))
+	text := C.GoString(cText)
+	return text
+}
+
+/* char* TessBaseAPIGetTsvText(TessBaseAPI* handle, int page_number);
+
+Make a TSV-formatted string from the internal data structures.
+page_number is 0-based but will appear in the output as 1-based.
+Returned string must be freed with the delete [] operator.
+*/
+
+// TSVText returns a TSV-formatted string.
+func (t *Tess) TSVText(pagenumber int) string {
+	cText := C.TessBaseAPIGetTsvText(t.tba, C.int(pagenumber))
 	defer C.free(unsafe.Pointer(cText))
 	text := C.GoString(cText)
 	return text
@@ -471,8 +494,6 @@ func (r *ResultIterator) Text(level PageIteratorLevel) (string, error) {
 // void TessBaseAPIClearAdaptiveClassifier(TessBaseAPI* handle);
 
 // void TessBaseAPISetImage(TessBaseAPI* handle, const unsigned char* imagedata, int width, int height, int bytes_per_pixel, int bytes_per_line);
-
-// void TessBaseAPISetSourceResolution(TessBaseAPI* handle, int ppi);
 
 // PIX* TessBaseAPIGetThresholdedImage( TessBaseAPI* handle);
 // BOXA* TessBaseAPIGetRegions( TessBaseAPI* handle, PIXA** pixa);
