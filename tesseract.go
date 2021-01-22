@@ -121,6 +121,14 @@ func (t *Tess) SetImagePix(pix *leptonica.Pix) {
 	C.TessBaseAPISetImage2(t.tba, (*C.struct_Pix)(unsafe.Pointer(pix.CPIX())))
 }
 
+// void TessBaseAPISetSourceResolution(TessBaseAPI* handle, int ppi);
+
+// SetSourceResolution set the resolution of the source image in pixels per inch.
+// The must be called after SetInputName or SetImagePix and has the same reslut as the --dpi flag.
+func (t *Tess) SetSourceResolution(ppi int) {
+	C.TessBaseAPISetSourceResolution(t.tba, C.int(ppi))
+}
+
 /* char* TessBaseAPIGetUTF8Text(TessBaseAPI* handle);
 
 Make a text string from the internal data structures.
@@ -486,8 +494,6 @@ func (r *ResultIterator) Text(level PageIteratorLevel) (string, error) {
 // void TessBaseAPIClearAdaptiveClassifier(TessBaseAPI* handle);
 
 // void TessBaseAPISetImage(TessBaseAPI* handle, const unsigned char* imagedata, int width, int height, int bytes_per_pixel, int bytes_per_line);
-
-// void TessBaseAPISetSourceResolution(TessBaseAPI* handle, int ppi);
 
 // PIX* TessBaseAPIGetThresholdedImage( TessBaseAPI* handle);
 // BOXA* TessBaseAPIGetRegions( TessBaseAPI* handle, PIXA** pixa);
